@@ -1,0 +1,159 @@
+package tiger.parse;
+
+terminal String ID, STRING;
+terminal Integer INT;
+terminal COMMA, COLON, SEMICOLON, LPAREN, RPAREN,
+	LBRACK, RBRACK, LBRACE, RBRACE, DOT, PLUS, MINUS,
+	TIMES, DIVIDE, EQ, NEQ, LT, LE, GT, GE, AND, OR,
+	ASSIGN, ARRAY, IF, THEN, ELSE, WHILE, FOR, TO, DO,
+	LET, IN, END, OF, BREAK, NIL, FUNCTION, VAR, TYPE;
+
+non terminal program, expr, exprs, exprlist, decs, dec, functiondec, stat, stats, else_stat;
+
+
+non terminal primary_expr, multiplicative_expr, additive_expr, logical_expr, equality_expr, relation_expr, unary_op, unary_expr, assign_expr, array_expr, array_ins, inside_assign, inside_assigns;
+
+non terminal type_id, ty, tyfield, tyfields, vardec, lvalue;
+
+precedence nonassoc ELSE;
+
+start with program;
+
+program ::= COMMA
+					| SEMICOLON
+					| decs
+					| stat
+					| expr
+					/*| program COMMA */
+         ;
+
+
+
+
+primary_expr ::= STRING
+							 | INT
+							 | NIL
+						   | lvalue
+						   | ID LPAREN exprlist RPAREN
+							 | LPAREN exprs RPAREN
+							 //function call
+							 ;
+
+unary_expr ::= unary_op primary_expr
+						 | primary_expr
+						 ;
+
+unary_op ::= PLUS
+					 | MINUS
+					 ;
+
+multiplicative_expr ::= unary_expr
+											| multiplicative_expr TIMES unary_expr
+											| multiplicative_expr DIVIDE unary_expr
+											;
+
+additive_expr ::= multiplicative_expr
+							  | additive_expr PLUS multiplicative_expr
+							  | additive_expr MINUS multiplicative_expr
+								;
+
+relation_expr ::= additive_expr
+								| relation_expr LT additive_expr
+								| relation_expr LE additive_expr
+								| relation_expr GT additive_expr
+								| relation_expr GE additive_expr
+								;
+
+equality_expr ::= relation_expr
+								| equality_expr EQ  relation_expr
+								| equality_expr NEQ relation_expr
+								;
+
+logical_expr ::= equality_expr
+							 | logical_expr OR equality_expr
+							 | logical_expr AND equality_expr
+							 ;
+
+assign_expr ::= logical_expr
+							| lvalue ASSIGN assign_expr
+							| array_expr
+							;
+
+
+expr ::= assign_expr
+
+
+			 | IF expr THEN expr ELSE expr
+			 | IF expr THEN expr
+			 | LET decs IN exprs END
+			 | FOR ID ASSIGN expr TO expr DO expr
+			 | BREAK
+
+			 | WHILE expr DO expr
+			 /*| lvalue*/
+			 ;
+
+exprs ::=
+				| expr
+				| exprs SEMICOLON expr
+				;
+
+exprlist ::=
+					 | expr
+					 | exprlist COMMA expr
+					 ;
+
+
+array_expr ::= array_ins OF expr
+						 | type_id LBRACE inside_assigns  RBRACE
+						 ;
+
+inside_assign ::= ID EQ expr;
+inside_assigns ::= inside_assign
+							| inside_assigns COMMA inside_assign
+							;
+
+lvalue ::=
+				    ID
+					| lvalue DOT ID
+					| array_ins
+					;
+
+vardec ::= VAR ID ASSIGN expr
+				 | VAR ID COLON ID ASSIGN expr
+				 ;
+
+functiondec ::= FUNCTION ID LPAREN tyfields RPAREN EQ expr
+							| FUNCTION ID LPAREN tyfields RPAREN COLON type_id EQ expr
+							;
+
+
+decs ::= dec
+			 | decs dec
+			 ;
+
+dec ::= TYPE ID EQ ty
+			| vardec
+			| functiondec
+			;
+
+
+ty ::= type_id
+		 | ARRAY OF type_id
+		 | LBRACE tyfields RBRACE
+		 ;
+
+tyfields ::=
+ 					 | tyfield
+					 | tyfields COMMA tyfield
+					 ;
+
+tyfield ::= ID COLON type_id
+					;
+
+
+type_id ::= ID
+					;
+
+array_ins ::= lvalue LBRACK expr RBRACK
+						;
